@@ -65,6 +65,14 @@ public class CableNetworkComponent<C extends Block & ICableNetwork<CablePathElem
     }
 
     @Override
+    public void reconnect(World world, BlockPos pos, EnumFacing side) {
+        ITileCable tile = TileHelpers.getSafeTile(world, pos, ITileCable.class);
+        if(tile != null) {
+            tile.reconnect(side);
+        }
+    }
+
+    @Override
     public void resetCurrentNetwork(World world, BlockPos pos) {
         ITileCableNetwork tile = TileHelpers.getSafeTile(world, pos, ITileCableNetwork.class);
         if(tile != null) {
@@ -171,7 +179,9 @@ public class CableNetworkComponent<C extends Block & ICableNetwork<CablePathElem
      * @param pos The position.
      */
     public void onPreBlockDestroyed(World world, BlockPos pos) {
-        removeFromNetwork(world, pos, true);
+        if(!world.isRemote) {
+            removeFromNetwork(world, pos, true);
+        }
     }
 
     /**
@@ -180,7 +190,9 @@ public class CableNetworkComponent<C extends Block & ICableNetwork<CablePathElem
      * @param pos The position.
      */
     public void onPostBlockDestroyed(World world, BlockPos pos) {
-        removeFromNetwork(world, pos, false);
+        if(!world.isRemote) {
+            removeFromNetwork(world, pos, false);
+        }
     }
 
     /**
