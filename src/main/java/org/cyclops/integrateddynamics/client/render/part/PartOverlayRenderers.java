@@ -1,6 +1,7 @@
 package org.cyclops.integrateddynamics.client.render.part;
 
 import org.cyclops.integrateddynamics.IntegratedDynamics;
+import org.cyclops.integrateddynamics.api.client.render.part.IPartOverlayRendererRegistry;
 import org.cyclops.integrateddynamics.core.part.PartTypes;
 
 /**
@@ -11,7 +12,7 @@ public class PartOverlayRenderers {
 
     public static final IPartOverlayRendererRegistry REGISTRY = IntegratedDynamics._instance.getRegistryManager().getRegistry(IPartOverlayRendererRegistry.class);
 
-    public static final DisplayPartOverlayRenderer DISPLAY = REGISTRY.register(PartTypes.DISPLAY, new DisplayPartOverlayRenderer());
+    public static final DisplayPartOverlayRenderer DISPLAY = REGISTRY.register(PartTypes.DISPLAY_PANEL, new DisplayPartOverlayRenderer());
 
     public static void load() {}
 

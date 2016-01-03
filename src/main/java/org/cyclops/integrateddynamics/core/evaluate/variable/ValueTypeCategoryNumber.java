@@ -4,7 +4,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import net.minecraft.util.EnumChatFormatting;
 import org.cyclops.cyclopscore.helper.Helpers;
-import org.cyclops.integrateddynamics.core.evaluate.EvaluationException;
+import org.cyclops.integrateddynamics.api.evaluate.EvaluationException;
+import org.cyclops.integrateddynamics.api.evaluate.variable.*;
 
 import java.util.Collections;
 import java.util.Map;
@@ -15,7 +16,7 @@ import java.util.Map;
  */
 public class ValueTypeCategoryNumber extends ValueTypeCategoryBase<IValue> {
 
-    private static final IValueTypeNumber[] ELEMENTS = new IValueTypeNumber[]{ValueTypes.INTEGER, ValueTypes.DOUBLE};
+    private static final IValueTypeNumber[] ELEMENTS = new IValueTypeNumber[]{ValueTypes.INTEGER, ValueTypes.DOUBLE, ValueTypes.LONG};
     private static final Map<IValueTypeNumber, Integer> INVERTED_ELEMENTS = Collections.unmodifiableMap(constructInvertedArray(ELEMENTS));
 
     public ValueTypeCategoryNumber() {

@@ -12,15 +12,17 @@ import org.cyclops.cyclopscore.helper.L10NHelpers;
 import org.cyclops.cyclopscore.helper.MinecraftHelpers;
 import org.cyclops.cyclopscore.inventory.SimpleInventory;
 import org.cyclops.cyclopscore.inventory.container.ScrollingInventoryContainer;
+import org.cyclops.cyclopscore.inventory.slot.SlotExtended;
 import org.cyclops.cyclopscore.inventory.slot.SlotSingleItem;
 import org.cyclops.cyclopscore.persist.IDirtyMarkListener;
 import org.cyclops.integrateddynamics.IntegratedDynamics;
+import org.cyclops.integrateddynamics.api.evaluate.variable.IValueType;
+import org.cyclops.integrateddynamics.api.item.IVariableFacade;
+import org.cyclops.integrateddynamics.api.item.IVariableFacadeHandlerRegistry;
+import org.cyclops.integrateddynamics.api.logicprogrammer.ILogicProgrammerElement;
+import org.cyclops.integrateddynamics.api.logicprogrammer.ILogicProgrammerElementType;
 import org.cyclops.integrateddynamics.block.BlockLogicProgrammer;
 import org.cyclops.integrateddynamics.client.gui.GuiLogicProgrammer;
-import org.cyclops.integrateddynamics.core.item.IVariableFacade;
-import org.cyclops.integrateddynamics.core.item.IVariableFacadeHandlerRegistry;
-import org.cyclops.integrateddynamics.core.logicprogrammer.ILogicProgrammerElement;
-import org.cyclops.integrateddynamics.core.logicprogrammer.ILogicProgrammerElementType;
 import org.cyclops.integrateddynamics.core.logicprogrammer.LogicProgrammerElementTypes;
 import org.cyclops.integrateddynamics.item.ItemVariable;
 
@@ -45,10 +47,15 @@ public class ContainerLogicProgrammer extends ScrollingInventoryContainer<ILogic
     };
 
     private final SimpleInventory writeSlot;
+    private final SimpleInventory filterSlots;
     private ILogicProgrammerElement activeElement = null;
     private SimpleInventory temporaryInputSlots = null;
     private L10NHelpers.UnlocalizedString lastError;
     private LoadConfigListener loadConfigListener;
+
+    private IValueType filterIn1 = null;
+    private IValueType filterIn2 = null;
+    private IValueType filterOut = null;
 
     @SideOnly(Side.CLIENT)
     private GuiLogicProgrammer gui;
@@ -60,6 +67,8 @@ public class ContainerLogicProgrammer extends ScrollingInventoryContainer<ILogic
     public ContainerLogicProgrammer(InventoryPlayer inventory) {
         super(inventory, BlockLogicProgrammer.getInstance(), getElements(), FILTERER);
         this.writeSlot = new SimpleInventory(1, "writeSlot", 1);
+        this.filterSlots = new SimpleInventory(3, "filterSlots", 1);
+        this.filterSlots.addDirtyMarkListener(new FilterSlotListener());
         this.writeSlot.addDirtyMarkListener(this);
         this.writeSlot.addDirtyMarkListener(loadConfigListener = new LoadConfigListener());
         this.temporaryInputSlots = new SimpleInventory(0, "temporaryInput", 1);
@@ -86,6 +95,15 @@ public class ContainerLogicProgrammer extends ScrollingInventoryContainer<ILogic
 
     protected void initializeSlots() {
         addSlotToContainer(new SlotSingleItem(writeSlot, 0, OUTPUT_X, OUTPUT_Y, ItemVariable.getInstance()));
+        SlotSingleItem filterSlotIn1 = new SlotSingleItem(filterSlots, 0, 6, 218, ItemVariable.getInstance());
+        SlotSingleItem filterSlotIn2 = new SlotSingleItem(filterSlots, 1, 24, 218, ItemVariable.getInstance());
+        SlotSingleItem filterSlotOut = new SlotSingleItem(filterSlots, 2, 58, 218, ItemVariable.getInstance());
+        filterSlotIn1.setPhantom(true);
+        filterSlotIn2.setPhantom(true);
+        filterSlotOut.setPhantom(true);
+        addSlotToContainer(filterSlotIn1);
+        addSlotToContainer(filterSlotIn2);
+        addSlotToContainer(filterSlotOut);
         addPlayerInventory((InventoryPlayer) getPlayerIInventory(), 88, 131);
     }
 
@@ -123,7 +141,7 @@ public class ContainerLogicProgrammer extends ScrollingInventoryContainer<ILogic
      * @param baseX The slots X coordinate
      * @param baseY The slots Y coordinate
      */
-    public void setActiveElement(ILogicProgrammerElement activeElement, int baseX, int baseY) {
+    public void setActiveElement(final ILogicProgrammerElement activeElement, int baseX, int baseY) {
         this.lastError = null;
         if(this.activeElement != null) {
             this.activeElement.deactivate();
@@ -144,8 +162,14 @@ public class ContainerLogicProgrammer extends ScrollingInventoryContainer<ILogic
         if(activeElement != null) {
             Pair<Integer, Integer>[] slotPositions = activeElement.getRenderPattern().getSlotPositions();
             for (int i = 0; i < temporaryInputSlots.getSizeInventory(); i++) {
-                SlotSingleItem slot = new SlotSingleItem(temporaryInputSlots, i, 1 + baseX + slotPositions[i].getLeft(),
-                        1 + baseY + slotPositions[i].getRight(), ItemVariable.getInstance());
+                final int slotId = i;
+                SlotExtended slot = new SlotExtended(temporaryInputSlots, i, 1 + baseX + slotPositions[i].getLeft(),
+                        1 + baseY + slotPositions[i].getRight()) {
+                    @Override
+                    public boolean isItemValid(ItemStack itemStack) {
+                        return activeElement.isItemValidForSlot(slotId, itemStack);
+                    }
+                };
                 slot.setPhantom(true);
                 addSlotToContainer(slot);
             }
@@ -231,6 +255,16 @@ public class ContainerLogicProgrammer extends ScrollingInventoryContainer<ILogic
         return this.writeSlot.getStackInSlot(0) != null;
     }
 
+    @Override
+    protected boolean additionalApplies(ILogicProgrammerElement item) {
+        return (
+                ((filterIn1 == null || item.matchesInput(filterIn1)) && (filterIn2 == null || item.matchesInput(filterIn2))) || (filterIn1 == null && filterIn2 == null))
+                && (filterOut == null || item.matchesOutput(filterOut));
+    }
+
+    /**
+     * Load existing operator data when a variable card is inserted into the write slot
+     */
     protected class LoadConfigListener implements IDirtyMarkListener {
 
         @Override
@@ -244,6 +278,32 @@ public class ContainerLogicProgrammer extends ScrollingInventoryContainer<ILogic
                     ContainerLogicProgrammer.this.loadConfigFrom(itemStack);
                 }
             }*/
+        }
+
+    }
+
+    /**
+     * Filter LP elements based on the filter value types.
+     */
+    protected class FilterSlotListener implements IDirtyMarkListener {
+
+        protected IValueType getValueType(IInventory inventory, int slot) {
+            IVariableFacadeHandlerRegistry handler = IntegratedDynamics._instance.getRegistryManager().getRegistry(IVariableFacadeHandlerRegistry.class);
+            if(inventory.getStackInSlot(slot) != null) {
+                IVariableFacade variableFacade = handler.handle(inventory.getStackInSlot(slot));
+                if(variableFacade.isValid()) {
+                    return variableFacade.getOutputType();
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public void onDirty() {
+            filterIn1 = getValueType(filterSlots, 0);
+            filterIn2 = getValueType(filterSlots, 1);
+            filterOut = getValueType(filterSlots, 2);
+            refreshFilter();
         }
 
     }

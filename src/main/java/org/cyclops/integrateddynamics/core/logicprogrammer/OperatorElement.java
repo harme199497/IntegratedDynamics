@@ -1,6 +1,5 @@
 package org.cyclops.integrateddynamics.core.logicprogrammer;
 
-import com.google.common.collect.Lists;
 import lombok.Data;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.texture.TextureManager;
@@ -12,25 +11,30 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.cyclops.cyclopscore.helper.L10NHelpers;
 import org.cyclops.cyclopscore.helper.MinecraftHelpers;
 import org.cyclops.integrateddynamics.IntegratedDynamics;
+import org.cyclops.integrateddynamics.api.evaluate.operator.IOperator;
+import org.cyclops.integrateddynamics.api.evaluate.variable.IValueType;
+import org.cyclops.integrateddynamics.api.item.IOperatorVariableFacade;
+import org.cyclops.integrateddynamics.api.item.IVariableFacade;
+import org.cyclops.integrateddynamics.api.item.IVariableFacadeHandlerRegistry;
+import org.cyclops.integrateddynamics.api.logicprogrammer.IConfigRenderPattern;
+import org.cyclops.integrateddynamics.api.logicprogrammer.ILogicProgrammerElement;
+import org.cyclops.integrateddynamics.api.logicprogrammer.ILogicProgrammerElementType;
 import org.cyclops.integrateddynamics.client.gui.GuiLogicProgrammer;
-import org.cyclops.integrateddynamics.core.evaluate.operator.IConfigRenderPattern;
-import org.cyclops.integrateddynamics.core.evaluate.operator.IOperator;
 import org.cyclops.integrateddynamics.core.evaluate.operator.Operators;
-import org.cyclops.integrateddynamics.core.evaluate.variable.IValueType;
 import org.cyclops.integrateddynamics.core.evaluate.variable.ValueHelpers;
-import org.cyclops.integrateddynamics.core.item.IVariableFacade;
-import org.cyclops.integrateddynamics.core.item.IVariableFacadeHandlerRegistry;
 import org.cyclops.integrateddynamics.core.item.OperatorVariableFacade;
 import org.cyclops.integrateddynamics.inventory.container.ContainerLogicProgrammer;
+import org.cyclops.integrateddynamics.item.ItemVariable;
 
 import java.util.List;
 
 /**
  * Element for operator.
+ *
  * @author rubensworks
  */
 @Data
-public class OperatorElement implements ILogicProgrammerElement {
+public class OperatorElement implements ILogicProgrammerElement<SubGuiConfigRenderPattern, GuiLogicProgrammer, ContainerLogicProgrammer> {
 
     private final IOperator operator;
     private IVariableFacade[] inputVariables;
@@ -43,6 +47,21 @@ public class OperatorElement implements ILogicProgrammerElement {
     @Override
     public String getMatchString() {
         return getOperator().getLocalizedNameFull().toLowerCase();
+    }
+
+    @Override
+    public boolean matchesInput(IValueType valueType) {
+        for (IValueType operatorIn : getOperator().getInputTypes()) {
+            if(ValueHelpers.correspondsTo(operatorIn, valueType)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean matchesOutput(IValueType valueType) {
+        return ValueHelpers.correspondsTo(getOperator().getOutputType(), valueType);
     }
 
     @Override
@@ -78,7 +97,7 @@ public class OperatorElement implements ILogicProgrammerElement {
 
     protected int[] getVariableIds(IVariableFacade[] inputVariables) {
         int[] variableIds = new int[inputVariables.length];
-        for(int i = 0; i < inputVariables.length; i++) {
+        for (int i = 0; i < inputVariables.length; i++) {
             variableIds[i] = inputVariables[i].getId();
         }
         return variableIds;
@@ -123,13 +142,18 @@ public class OperatorElement implements ILogicProgrammerElement {
 
     @Override
     public boolean isFor(IVariableFacade variableFacade) {
-        if (variableFacade instanceof OperatorVariableFacade) {
-            OperatorVariableFacade operatorFacade = (OperatorVariableFacade) variableFacade;
+        if (variableFacade instanceof IOperatorVariableFacade) {
+            IOperatorVariableFacade operatorFacade = (IOperatorVariableFacade) variableFacade;
             if (operatorFacade.isValid()) {
                 return getOperator() == operatorFacade.getOperator();
             }
         }
         return false;
+    }
+
+    @Override
+    public boolean isItemValidForSlot(int slotId, ItemStack itemStack) {
+        return itemStack.getItem() == ItemVariable.getInstance();
     }
 
     @Override
@@ -139,7 +163,7 @@ public class OperatorElement implements ILogicProgrammerElement {
         return new SubGuiRenderPattern(this, baseX, baseY, maxWidth, maxHeight, gui, container);
     }
 
-    protected static class OperatorVariableFacadeFactory implements IVariableFacadeHandlerRegistry.IVariableFacadeFactory<OperatorVariableFacade> {
+    protected static class OperatorVariableFacadeFactory implements IVariableFacadeHandlerRegistry.IVariableFacadeFactory<IOperatorVariableFacade> {
 
         private final IOperator operator;
         private final int[] variableIds;
@@ -150,12 +174,12 @@ public class OperatorElement implements ILogicProgrammerElement {
         }
 
         @Override
-        public OperatorVariableFacade create(boolean generateId) {
+        public IOperatorVariableFacade create(boolean generateId) {
             return new OperatorVariableFacade(generateId, operator, variableIds);
         }
 
         @Override
-        public OperatorVariableFacade create(int id) {
+        public IOperatorVariableFacade create(int id) {
             return new OperatorVariableFacade(id, operator, variableIds);
         }
     }
@@ -176,28 +200,24 @@ public class OperatorElement implements ILogicProgrammerElement {
 
             // Input type tooltips
             IValueType[] valueTypes = operator.getInputTypes();
-            for(int i = 0; i < valueTypes.length; i++) {
+            for (int i = 0; i < valueTypes.length; i++) {
                 IValueType valueType = valueTypes[i];
                 IInventory temporaryInputSlots = container.getTemporaryInputSlots();
-                if(temporaryInputSlots.getStackInSlot(i) == null) {
+                if (temporaryInputSlots.getStackInSlot(i) == null) {
                     Pair<Integer, Integer> slotPosition = configRenderPattern.getSlotPositions()[i];
-                    if(gui.isPointInRegion(getX() + slotPosition.getLeft(), getY() + slotPosition.getRight(),
+                    if (gui.isPointInRegion(getX() + slotPosition.getLeft(), getY() + slotPosition.getRight(),
                             GuiLogicProgrammer.BOX_HEIGHT, GuiLogicProgrammer.BOX_HEIGHT, mouseX, mouseY)) {
-                        List<String> lines = Lists.newLinkedList();
-                        lines.add(valueType.getDisplayColorFormat() + L10NHelpers.localize(valueType.getUnlocalizedName()));
-                        gui.drawTooltip(lines, mouseX - guiLeft, mouseY - guiTop);
+                        gui.drawTooltip(getValueTypeTooltip(valueType), mouseX - guiLeft, mouseY - guiTop);
                     }
                 }
             }
 
             // Output type tooltip
             IValueType outputType = operator.getOutputType();
-            if(!container.hasWriteItemInSlot()) {
-                if(gui.isPointInRegion(ContainerLogicProgrammer.OUTPUT_X, ContainerLogicProgrammer.OUTPUT_Y,
+            if (!container.hasWriteItemInSlot()) {
+                if (gui.isPointInRegion(ContainerLogicProgrammer.OUTPUT_X, ContainerLogicProgrammer.OUTPUT_Y,
                         GuiLogicProgrammer.BOX_HEIGHT, GuiLogicProgrammer.BOX_HEIGHT, mouseX, mouseY)) {
-                    List<String> lines = Lists.newLinkedList();
-                    lines.add(outputType.getDisplayColorFormat() + L10NHelpers.localize(outputType.getUnlocalizedName()));
-                    gui.drawTooltip(lines, mouseX - guiLeft, mouseY - guiTop);
+                    gui.drawTooltip(getValueTypeTooltip(outputType), mouseX - guiLeft, mouseY - guiTop);
                 }
             }
         }

@@ -6,13 +6,13 @@ import net.minecraft.util.EnumFacing;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.cyclops.cyclopscore.client.gui.image.Images;
-import org.cyclops.integrateddynamics.client.render.valuetype.IValueTypeWorldRenderer;
+import org.cyclops.integrateddynamics.api.client.render.valuetype.IValueTypeWorldRenderer;
+import org.cyclops.integrateddynamics.api.evaluate.variable.IValue;
+import org.cyclops.integrateddynamics.api.evaluate.variable.IValueType;
+import org.cyclops.integrateddynamics.api.part.IPartContainer;
+import org.cyclops.integrateddynamics.api.part.IPartType;
 import org.cyclops.integrateddynamics.client.render.valuetype.ValueTypeWorldRenderers;
-import org.cyclops.integrateddynamics.core.evaluate.variable.IValue;
-import org.cyclops.integrateddynamics.core.evaluate.variable.IValueType;
-import org.cyclops.integrateddynamics.core.part.IPartContainer;
-import org.cyclops.integrateddynamics.core.part.IPartType;
-import org.cyclops.integrateddynamics.part.PartTypeDisplay;
+import org.cyclops.integrateddynamics.part.PartTypePanelDisplay;
 
 /**
  * Overlay renderer for the display part to display values on the part.
@@ -66,16 +66,15 @@ public class DisplayPartOverlayRenderer extends PartOverlayRendererBase {
         GlStateManager.scale(1, -1, 1);
         GlStateManager.disableRescaleNormal();
 
-        PartTypeDisplay.State partState = (PartTypeDisplay.State) partContainer.getPartState(direction);
+        PartTypePanelDisplay.State partState = (PartTypePanelDisplay.State) partContainer.getPartState(direction);
 
         int rotation = partState.getFacingRotation().ordinal() - 2;
         GlStateManager.translate(6, 6, 0);
         GlStateManager.rotate(rotation * 90, 0, 0, 1);
-        //GlStateManager.rotate((float) (Math.random() * 360), 0, 0, 1);
         GlStateManager.translate(-6, -6, 0);
 
         IValue value = partState.getDisplayValue();
-        if(value != null) {
+        if(value != null && partState.isEnabled()) {
             IValueType<?> valueType = value.getType();
             IValueTypeWorldRenderer renderer = ValueTypeWorldRenderers.REGISTRY.getRenderer(valueType);
             if(renderer == null) {

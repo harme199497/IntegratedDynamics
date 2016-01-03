@@ -1,11 +1,13 @@
 package org.cyclops.integrateddynamics.core.evaluate.variable;
 
-import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.cyclops.cyclopscore.helper.L10NHelpers;
 import org.cyclops.cyclopscore.helper.MinecraftHelpers;
 import org.cyclops.integrateddynamics.Reference;
+import org.cyclops.integrateddynamics.api.evaluate.variable.IValue;
+import org.cyclops.integrateddynamics.api.evaluate.variable.IValueType;
 import org.cyclops.integrateddynamics.core.helper.L10NValues;
 
 import java.util.List;
@@ -34,8 +36,17 @@ public abstract class ValueTypeBase<V extends IValue> implements IValueType<V> {
         return false;
     }
 
+    @Override
+    public boolean isObject() {
+        return false;
+    }
+
     protected String getUnlocalizedPrefix() {
-        return "valuetype.valuetypes." + getModId() + "." + getTypeName();
+        return "valuetype.valuetypes." + getModId() + getTypeNamespace() + getTypeName();
+    }
+
+    protected String getTypeNamespace() {
+        return ".";
     }
 
     @Override
@@ -65,7 +76,7 @@ public abstract class ValueTypeBase<V extends IValue> implements IValueType<V> {
     @SideOnly(Side.CLIENT)
     protected void registerModelResourceLocation() {
         ValueTypes.REGISTRY.registerValueTypeModel(this,
-                new ModelResourceLocation(getModId() + ":valuetype/" + getTypeName()));
+                new ResourceLocation(getModId() + ":valuetype" + getTypeNamespace().replace('.', '/') + getTypeName()));
     }
 
     @Override
@@ -85,6 +96,16 @@ public abstract class ValueTypeBase<V extends IValue> implements IValueType<V> {
         } catch (IllegalArgumentException e) {
             return new L10NHelpers.UnlocalizedString(L10NValues.VALUETYPE_ERROR_INVALIDINPUT, value);
         }
+    }
+
+    @Override
+    public V materialize(V value) {
+        return value;
+    }
+
+    @Override
+    public String toString() {
+        return L10NHelpers.localize(getUnlocalizedName());
     }
 
     protected String getModId() {

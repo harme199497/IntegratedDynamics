@@ -4,26 +4,31 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.cyclops.cyclopscore.helper.MinecraftHelpers;
 import org.cyclops.integrateddynamics.IntegratedDynamics;
+import org.cyclops.integrateddynamics.api.item.IAspectVariableFacade;
+import org.cyclops.integrateddynamics.api.item.IVariableFacadeHandlerRegistry;
+import org.cyclops.integrateddynamics.api.part.IPartType;
+import org.cyclops.integrateddynamics.api.part.aspect.IAspect;
+import org.cyclops.integrateddynamics.api.part.aspect.IAspectRead;
+import org.cyclops.integrateddynamics.api.part.aspect.IAspectRegistry;
+import org.cyclops.integrateddynamics.api.part.aspect.IAspectWrite;
 import org.cyclops.integrateddynamics.core.item.AspectVariableFacade;
-import org.cyclops.integrateddynamics.core.item.IVariableFacadeHandlerRegistry;
-import org.cyclops.integrateddynamics.core.part.IPartType;
 
 import java.util.*;
 
 /**
- * Registry for {@link org.cyclops.integrateddynamics.core.part.aspect.IAspect}.
+ * Registry for {@link IAspect}.
  * @author rubensworks
  */
 public final class AspectRegistry implements IAspectRegistry {
 
     private static AspectRegistry INSTANCE = new AspectRegistry();
-    private static final AspectVariableFacade INVALID_FACADE = new AspectVariableFacade(false, -1, null);
+    private static final IAspectVariableFacade INVALID_FACADE = new AspectVariableFacade(false, -1, null);
 
     private Map<IPartType, Set<IAspect>> partAspects = Maps.newHashMap();
     private Map<IPartType, Set<IAspectRead>> partReadAspects = Maps.newHashMap();
@@ -34,7 +39,7 @@ public final class AspectRegistry implements IAspectRegistry {
     private Map<String, IAspectRead> unlocalizedReadAspects = Maps.newHashMap();
     private Map<String, IAspectWrite> unlocalizedWriteAspects = Maps.newHashMap();
     @SideOnly(Side.CLIENT)
-    private Map<IAspect, ModelResourceLocation> aspectModels;
+    private Map<IAspect, ResourceLocation> aspectModels;
 
     private AspectRegistry() {
         IntegratedDynamics._instance.getRegistryManager().getRegistry(IVariableFacadeHandlerRegistry.class).registerHandler(this);
@@ -122,19 +127,19 @@ public final class AspectRegistry implements IAspectRegistry {
 
     @SideOnly(Side.CLIENT)
     @Override
-    public void registerAspectModel(IAspect aspect, ModelResourceLocation modelLocation) {
+    public void registerAspectModel(IAspect aspect, ResourceLocation modelLocation) {
         aspectModels.put(aspect, modelLocation);
     }
 
     @SideOnly(Side.CLIENT)
     @Override
-    public ModelResourceLocation getAspectModel(IAspect aspect) {
+    public ResourceLocation getAspectModel(IAspect aspect) {
         return aspectModels.get(aspect);
     }
 
     @SideOnly(Side.CLIENT)
     @Override
-    public Collection<ModelResourceLocation> getAspectModels() {
+    public Collection<ResourceLocation> getAspectModels() {
         return Collections.unmodifiableCollection(aspectModels.values());
     }
 
@@ -144,7 +149,7 @@ public final class AspectRegistry implements IAspectRegistry {
     }
 
     @Override
-    public AspectVariableFacade getVariableFacade(int id, NBTTagCompound tag) {
+    public IAspectVariableFacade getVariableFacade(int id, NBTTagCompound tag) {
         if(!tag.hasKey("partId", MinecraftHelpers.NBTTag_Types.NBTTagInt.ordinal())
                 || !tag.hasKey("aspectName", MinecraftHelpers.NBTTag_Types.NBTTagString.ordinal())) {
             return INVALID_FACADE;
@@ -158,7 +163,7 @@ public final class AspectRegistry implements IAspectRegistry {
     }
 
     @Override
-    public void setVariableFacade(NBTTagCompound tag, AspectVariableFacade variableFacade) {
+    public void setVariableFacade(NBTTagCompound tag, IAspectVariableFacade variableFacade) {
         tag.setInteger("partId", variableFacade.getPartId());
         tag.setString("aspectName", variableFacade.getAspect().getUnlocalizedName());
     }

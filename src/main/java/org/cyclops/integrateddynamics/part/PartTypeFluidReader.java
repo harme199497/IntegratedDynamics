@@ -1,8 +1,8 @@
 package org.cyclops.integrateddynamics.part;
 
 import com.google.common.collect.Sets;
+import org.cyclops.integrateddynamics.api.part.aspect.IAspect;
 import org.cyclops.integrateddynamics.core.part.aspect.AspectRegistry;
-import org.cyclops.integrateddynamics.core.part.aspect.IAspect;
 import org.cyclops.integrateddynamics.core.part.read.PartStateReaderBase;
 import org.cyclops.integrateddynamics.core.part.read.PartTypeReadBase;
 import org.cyclops.integrateddynamics.part.aspect.Aspects;
@@ -32,14 +32,9 @@ public class PartTypeFluidReader extends PartTypeReadBase<PartTypeFluidReader, P
                 Aspects.READ_INTEGER_FLUID_VISCOSITY,
                 Aspects.READ_DOUBLE_FLUID_FILLRATIO,
                 Aspects.READ_STRING_FLUID_NAME,
-                Aspects.READ_STRING_FLUID_BLOCKNAME,
-                Aspects.READ_STRING_FLUID_RARITY
+                Aspects.READ_STRING_FLUID_RARITY,
+                Aspects.READ_BLOCK_FLUID_BLOCK
         ));
-    }
-
-    @Override
-    public boolean isSolid(PartStateReaderBase<PartTypeFluidReader> state) {
-        return true;
     }
 
     @Override

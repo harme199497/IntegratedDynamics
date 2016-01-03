@@ -1,8 +1,8 @@
 package org.cyclops.integrateddynamics.part;
 
 import com.google.common.collect.Sets;
+import org.cyclops.integrateddynamics.api.part.aspect.IAspect;
 import org.cyclops.integrateddynamics.core.part.aspect.AspectRegistry;
-import org.cyclops.integrateddynamics.core.part.aspect.IAspect;
 import org.cyclops.integrateddynamics.core.part.read.PartStateReaderBase;
 import org.cyclops.integrateddynamics.core.part.read.PartTypeReadBase;
 import org.cyclops.integrateddynamics.part.aspect.Aspects;
@@ -21,13 +21,9 @@ public class PartTypeInventoryReader extends PartTypeReadBase<PartTypeInventoryR
                 Aspects.READ_BOOLEAN_INVENTORY_NONEMPTY,
                 Aspects.READ_BOOLEAN_INVENTORY_APPLICABLE,
                 Aspects.READ_INTEGER_INVENTORY_COUNT,
-                Aspects.READ_INTEGER_INVENTORY_COUNT_SLOT
+                Aspects.READ_LIST_INVENTORY_ITEMSTACKS,
+                Aspects.READ_OBJECT_ITEM_STACK_INVENTORY_SLOT
         ));
-    }
-
-    @Override
-    public boolean isSolid(PartStateReaderBase<PartTypeInventoryReader> state) {
-        return true;
     }
 
     @Override

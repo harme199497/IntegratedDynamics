@@ -2,6 +2,7 @@ package org.cyclops.integrateddynamics.core.evaluate.variable;
 
 import lombok.ToString;
 import org.cyclops.cyclopscore.helper.L10NHelpers;
+import org.cyclops.integrateddynamics.api.evaluate.variable.IValueType;
 
 import java.util.List;
 
@@ -15,6 +16,11 @@ public class DummyValueType implements IValueType<DummyValueType.DummyValue> {
 
     @Override
     public boolean isCategory() {
+        return false;
+    }
+
+    @Override
+    public boolean isObject() {
         return false;
     }
 
@@ -66,6 +72,11 @@ public class DummyValueType implements IValueType<DummyValueType.DummyValue> {
     @Override
     public DummyValue deserialize(String value) {
         return null;
+    }
+
+    @Override
+    public DummyValue materialize(DummyValue value) {
+        return value;
     }
 
     @ToString

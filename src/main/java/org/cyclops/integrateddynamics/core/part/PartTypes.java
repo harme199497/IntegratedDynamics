@@ -1,6 +1,7 @@
 package org.cyclops.integrateddynamics.core.part;
 
 import org.cyclops.integrateddynamics.IntegratedDynamics;
+import org.cyclops.integrateddynamics.api.part.IPartTypeRegistry;
 import org.cyclops.integrateddynamics.part.*;
 
 /**
@@ -19,11 +20,14 @@ public final class PartTypes {
     public static final PartTypeWorldReader WORLD_READER = REGISTRY.register(new PartTypeWorldReader("worldReader"));
     public static final PartTypeFluidReader FLUID_READER = REGISTRY.register(new PartTypeFluidReader("fluidReader"));
     public static final PartTypeMinecraftReader MINECRAFT_READER = REGISTRY.register(new PartTypeMinecraftReader("minecraftReader"));
+    public static final PartTypeNetworkReader NETWORK_READER = REGISTRY.register(new PartTypeNetworkReader("networkReader"));
 
     // Writers
     public static final PartTypeRedstoneWriter REDSTONE_WRITER = REGISTRY.register(new PartTypeRedstoneWriter("redstoneWriter"));
 
-    // Misc
-    public static final PartTypeDisplay DISPLAY = REGISTRY.register(new PartTypeDisplay("display"));
+    // Panels
+    public static final PartTypePanelLightStatic STATIC_LIGHT_PANEL = REGISTRY.register(new PartTypePanelLightStatic("staticLightPanel"));
+    public static final PartTypePanelLightDynamic DYNAMIC_LIGHT_PANEL = REGISTRY.register(new PartTypePanelLightDynamic("dynamicLightPanel"));
+    public static final PartTypePanelDisplay DISPLAY_PANEL = REGISTRY.register(new PartTypePanelDisplay("displayPanel"));
 
 }

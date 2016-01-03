@@ -3,9 +3,11 @@ package org.cyclops.integrateddynamics.core.evaluate.variable;
 import lombok.ToString;
 import net.minecraft.util.EnumChatFormatting;
 import org.cyclops.cyclopscore.helper.Helpers;
+import org.cyclops.integrateddynamics.api.evaluate.variable.IValueTypeNumber;
 
 /**
  * Value type with values that are integers.
+ * The raw value is nullable.
  * @author rubensworks
  */
 public class ValueTypeInteger extends ValueTypeBase<ValueTypeInteger.ValueInteger> implements IValueTypeNumber<ValueTypeInteger.ValueInteger> {

@@ -13,17 +13,16 @@ import org.cyclops.cyclopscore.helper.ValueNotifierHelpers;
 import org.cyclops.cyclopscore.inventory.IGuiContainerProvider;
 import org.cyclops.cyclopscore.inventory.SimpleInventory;
 import org.cyclops.cyclopscore.inventory.slot.SlotRemoveOnly;
-import org.cyclops.cyclopscore.inventory.slot.SlotSingleItem;
-import org.cyclops.integrateddynamics.core.evaluate.EvaluationException;
-import org.cyclops.integrateddynamics.core.evaluate.variable.IValue;
-import org.cyclops.integrateddynamics.core.evaluate.variable.IVariable;
+import org.cyclops.integrateddynamics.api.evaluate.EvaluationException;
+import org.cyclops.integrateddynamics.api.evaluate.variable.IValue;
+import org.cyclops.integrateddynamics.api.evaluate.variable.IVariable;
+import org.cyclops.integrateddynamics.api.part.IPartContainer;
+import org.cyclops.integrateddynamics.api.part.PartTarget;
+import org.cyclops.integrateddynamics.api.part.aspect.IAspectRead;
+import org.cyclops.integrateddynamics.api.part.read.IPartStateReader;
+import org.cyclops.integrateddynamics.api.part.read.IPartTypeReader;
 import org.cyclops.integrateddynamics.core.inventory.container.ContainerMultipartAspects;
-import org.cyclops.integrateddynamics.core.part.IPartContainer;
-import org.cyclops.integrateddynamics.core.part.PartTarget;
-import org.cyclops.integrateddynamics.core.part.aspect.IAspectRead;
-import org.cyclops.integrateddynamics.core.part.read.IPartStateReader;
-import org.cyclops.integrateddynamics.core.part.read.IPartTypeReader;
-import org.cyclops.integrateddynamics.item.ItemVariable;
+import org.cyclops.integrateddynamics.core.inventory.container.slot.SlotVariable;
 
 /**
  * Container for reader parts.
@@ -53,7 +52,7 @@ public class ContainerPartReader<P extends IPartTypeReader<P, S> & IGuiContainer
         super(player, partTarget, partContainer, partType, partType.getReadAspects());
 
         for(int i = 0; i < getUnfilteredItemCount(); i++) {
-            addSlotToContainer(new SlotSingleItem(inputSlots, i, SLOT_IN_X, SLOT_IN_Y + getAspectBoxHeight() * i, ItemVariable.getInstance()));
+            addSlotToContainer(new SlotVariable(inputSlots, i, SLOT_IN_X, SLOT_IN_Y + getAspectBoxHeight() * i));
             disableSlot(i);
         }
 
@@ -122,11 +121,11 @@ public class ContainerPartReader<P extends IPartTypeReader<P, S> & IGuiContainer
         if (!getWorld().isRemote) {
             for (int i = 0; i < getUnfilteredItemCount(); ++i) {
                 ItemStack itemstack;
-                itemstack = inputSlots.getStackInSlotOnClosing(i);
+                itemstack = inputSlots.removeStackFromSlot(i);
                 if (itemstack != null) {
                     player.dropPlayerItemWithRandomChoice(itemstack, false);
                 }
-                itemstack = outputSlots.getStackInSlotOnClosing(i);
+                itemstack = outputSlots.removeStackFromSlot(i);
                 if (itemstack != null) {
                     player.dropPlayerItemWithRandomChoice(itemstack, false);
                 }

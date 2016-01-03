@@ -1,5 +1,7 @@
 package org.cyclops.integrateddynamics;
 
+import com.google.common.collect.Maps;
+import net.minecraft.command.ICommand;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.Mod;
@@ -7,6 +9,7 @@ import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.*;
 import org.apache.logging.log4j.Level;
 import org.cyclops.cyclopscore.client.gui.GuiHandler;
+import org.cyclops.cyclopscore.command.CommandMod;
 import org.cyclops.cyclopscore.config.ConfigHandler;
 import org.cyclops.cyclopscore.config.extendedconfig.BlockItemConfigReference;
 import org.cyclops.cyclopscore.helper.MinecraftHelpers;
@@ -15,32 +18,44 @@ import org.cyclops.cyclopscore.init.ModBaseVersionable;
 import org.cyclops.cyclopscore.init.RecipeHandler;
 import org.cyclops.cyclopscore.persist.world.GlobalCounters;
 import org.cyclops.cyclopscore.proxy.ICommonProxy;
+import org.cyclops.integrateddynamics.api.client.model.IVariableModelProviderRegistry;
+import org.cyclops.integrateddynamics.api.client.render.part.IPartOverlayRendererRegistry;
+import org.cyclops.integrateddynamics.api.client.render.valuetype.IValueTypeWorldRendererRegistry;
+import org.cyclops.integrateddynamics.api.evaluate.operator.IOperatorRegistry;
+import org.cyclops.integrateddynamics.api.evaluate.variable.IValueCastRegistry;
+import org.cyclops.integrateddynamics.api.evaluate.variable.IValueTypeLightLevelRegistry;
+import org.cyclops.integrateddynamics.api.evaluate.variable.IValueTypeListProxyFactoryTypeRegistry;
+import org.cyclops.integrateddynamics.api.evaluate.variable.IValueTypeRegistry;
+import org.cyclops.integrateddynamics.api.item.IVariableFacadeHandlerRegistry;
+import org.cyclops.integrateddynamics.api.logicprogrammer.ILogicProgrammerElementTypeRegistry;
+import org.cyclops.integrateddynamics.api.part.IPartTypeRegistry;
+import org.cyclops.integrateddynamics.api.part.aspect.IAspectRegistry;
 import org.cyclops.integrateddynamics.block.BlockCableConfig;
-import org.cyclops.integrateddynamics.client.render.part.IPartOverlayRendererRegistry;
 import org.cyclops.integrateddynamics.client.render.part.PartOverlayRendererRegistry;
 import org.cyclops.integrateddynamics.client.render.part.PartOverlayRenderers;
-import org.cyclops.integrateddynamics.client.render.valuetype.IValueTypeWorldRendererRegistry;
 import org.cyclops.integrateddynamics.client.render.valuetype.ValueTypeWorldRendererRegistry;
 import org.cyclops.integrateddynamics.client.render.valuetype.ValueTypeWorldRenderers;
+import org.cyclops.integrateddynamics.command.CommandTest;
 import org.cyclops.integrateddynamics.core.TickHandler;
 import org.cyclops.integrateddynamics.core.client.gui.ExtendedGuiHandler;
-import org.cyclops.integrateddynamics.core.evaluate.operator.IOperatorRegistry;
+import org.cyclops.integrateddynamics.core.client.model.VariableModelProviderRegistry;
+import org.cyclops.integrateddynamics.core.client.model.VariableModelProviders;
+import org.cyclops.integrateddynamics.core.evaluate.ProxyVariableFacadeHandler;
 import org.cyclops.integrateddynamics.core.evaluate.operator.OperatorRegistry;
 import org.cyclops.integrateddynamics.core.evaluate.operator.Operators;
 import org.cyclops.integrateddynamics.core.evaluate.variable.*;
-import org.cyclops.integrateddynamics.core.item.IVariableFacadeHandlerRegistry;
 import org.cyclops.integrateddynamics.core.item.VariableFacadeHandlerRegistry;
-import org.cyclops.integrateddynamics.core.logicprogrammer.ILogicProgrammerElementTypeRegistry;
 import org.cyclops.integrateddynamics.core.logicprogrammer.LogicProgrammerElementTypeRegistry;
 import org.cyclops.integrateddynamics.core.logicprogrammer.LogicProgrammerElementTypes;
-import org.cyclops.integrateddynamics.core.part.IPartTypeRegistry;
 import org.cyclops.integrateddynamics.core.part.PartTypeRegistry;
 import org.cyclops.integrateddynamics.core.part.PartTypes;
 import org.cyclops.integrateddynamics.core.part.aspect.AspectRegistry;
-import org.cyclops.integrateddynamics.core.part.aspect.IAspectRegistry;
 import org.cyclops.integrateddynamics.core.persist.world.LabelsWorldStorage;
 import org.cyclops.integrateddynamics.core.persist.world.NetworkWorldStorage;
+import org.cyclops.integrateddynamics.core.test.TestHelpers;
 import org.cyclops.integrateddynamics.part.aspect.Aspects;
+
+import java.util.Map;
 
 /**
  * The main mod class of IntegratedDynamics.
@@ -92,12 +107,23 @@ public class IntegratedDynamics extends ModBaseVersionable {
         );
     }
 
+    @Override
+    protected ICommand constructBaseCommand() {
+        Map<String, ICommand> commands = Maps.newHashMap();
+        if(TestHelpers.canRunIntegrationTests()) {
+            commands.put(CommandTest.NAME, new CommandTest(this));
+        }
+        return new CommandMod(this, commands);
+    }
+
     @Mod.EventHandler
     @Override
     public final void preInit(FMLPreInitializationEvent event) {
         getRegistryManager().addRegistry(IVariableFacadeHandlerRegistry.class, VariableFacadeHandlerRegistry.getInstance());
         getRegistryManager().addRegistry(IValueTypeRegistry.class, ValueTypeRegistry.getInstance());
         getRegistryManager().addRegistry(IValueCastRegistry.class, ValueCastRegistry.getInstance());
+        getRegistryManager().addRegistry(IValueTypeListProxyFactoryTypeRegistry.class, ValueTypeListProxyFactoryTypeRegistry.getInstance());
+        getRegistryManager().addRegistry(IValueTypeLightLevelRegistry.class, ValueTypeLightLevelRegistry.getInstance());
         getRegistryManager().addRegistry(IPartTypeRegistry.class, PartTypeRegistry.getInstance());
         getRegistryManager().addRegistry(IAspectRegistry.class, AspectRegistry.getInstance());
         getRegistryManager().addRegistry(IOperatorRegistry.class, OperatorRegistry.getInstance());
@@ -105,12 +131,16 @@ public class IntegratedDynamics extends ModBaseVersionable {
         if(MinecraftHelpers.isClientSide()) {
             getRegistryManager().addRegistry(IPartOverlayRendererRegistry.class, PartOverlayRendererRegistry.getInstance());
             getRegistryManager().addRegistry(IValueTypeWorldRendererRegistry.class, ValueTypeWorldRendererRegistry.getInstance());
+            getRegistryManager().addRegistry(IVariableModelProviderRegistry.class, VariableModelProviderRegistry.getInstance());
         }
+        getRegistryManager().getRegistry(IVariableFacadeHandlerRegistry.class).registerHandler(ProxyVariableFacadeHandler.getInstance());
 
         addInitListeners(getRegistryManager().getRegistry(IPartTypeRegistry.class));
 
         ValueTypes.load();
         ValueCastMappings.load();
+        ValueTypeLightLevels.load();
+        ValueTypeListProxyFactories.load();
         Operators.load();
         Aspects.load();
         PartTypes.load();
@@ -118,6 +148,7 @@ public class IntegratedDynamics extends ModBaseVersionable {
         if(MinecraftHelpers.isClientSide()) {
             PartOverlayRenderers.load();
             ValueTypeWorldRenderers.load();
+            VariableModelProviders.load();
         }
 
         super.preInit(event);
@@ -135,6 +166,12 @@ public class IntegratedDynamics extends ModBaseVersionable {
     @Override
     public final void postInit(FMLPostInitializationEvent event) {
         super.postInit(event);
+    }
+
+    @Mod.EventHandler
+    @Override
+    public void onServerStarting(FMLServerStartingEvent event) {
+        super.onServerStarting(event);
     }
 
     @Mod.EventHandler
